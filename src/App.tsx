@@ -52,29 +52,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
 }
 
 function Login({ onLogin, isDarkMode }: { onLogin: () => void, isDarkMode: boolean }) {
-  return (
-    <div className={`min-h-screen flex items-center justify-center p-4 transition-colors ${isDarkMode ? 'bg-zinc-950' : 'bg-zinc-50'}`}>
-      <div className={`p-8 rounded-2xl shadow-xl max-w-md w-full border text-center transition-colors ${isDarkMode ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-black/5'}`}>
-        <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white mx-auto mb-6 shadow-lg shadow-indigo-200">
-          <Shield className="w-8 h-8" />
-        </div>
-        <div className="mb-8">
-          <h1 className={`text-4xl font-bold transition-colors ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>Sentinel</h1>
-          <p className="text-xs uppercase tracking-[0.2em] font-semibold text-indigo-600 mt-1">Health Outbreak Tracker</p>
-        </div>
-        <p className="text-zinc-500 mb-8">Sign in to access real-time health data and outbreak analysis.</p>
-        <button
-          onClick={onLogin}
-          className={`w-full flex items-center justify-center gap-3 py-3 rounded-xl font-medium transition-all shadow-sm border ${
-            isDarkMode ? 'bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700' : 'bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-50'
-          }`}
-        >
-          <img src="https://www.google.com/favicon.ico" className="w-5 h-5" alt="Google" />
-          Sign in with Google
-        </button>
-      </div>
-    </div>
-  );
+  return null;
 }
 
 export default function App() {
@@ -88,8 +66,6 @@ export default function App() {
 function AppContent() {
   const [records, setRecords] = useState<HealthRecord[]>([]);
   const [alerts, setAlerts] = useState<OutbreakAlert[]>([]);
-  const [user, setUser] = useState<User | null>(null);
-  const [isAuthReady, setIsAuthReady] = useState(false);
   const [predictiveInsight, setPredictiveInsight] = useState<PredictiveInsight | null>(null);
   const [nearbyFacilities, setNearbyFacilities] = useState<Facility[]>([]);
   const [homeRemedies, setHomeRemedies] = useState<HomeRemedy[]>([]);
@@ -140,16 +116,6 @@ function AppContent() {
   }, [isDarkMode]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      setIsAuthReady(true);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (!isAuthReady || !user) return;
-
     const testConnection = async () => {
       try {
         await getDocFromServer(doc(db, 'test', 'connection'));
@@ -212,7 +178,7 @@ function AppContent() {
       unsubscribeRecords();
       unsubscribeAlerts();
     };
-  }, [isAuthReady, user]);
+  }, []);
 
   useEffect(() => {
     console.log("App is ready");
@@ -233,7 +199,7 @@ function AppContent() {
 
   useEffect(() => {
     const updateAnalysis = async () => {
-      if (filteredRecords.length > 0 && user) {
+      if (filteredRecords.length > 0) {
         setLoading(true);
         setPredictiveLoading(true);
         setFacilitiesLoading(true);
@@ -276,7 +242,7 @@ function AppContent() {
     
     const timer = setTimeout(updateAnalysis, 2000);
     return () => clearTimeout(timer);
-  }, [records, user, geoFilter]);
+  }, [records, geoFilter]);
 
   const handleSort = (key: keyof HealthRecord) => {
     let direction: 'asc' | 'desc' = 'asc';
@@ -310,12 +276,10 @@ function AppContent() {
   }, [filteredRecords, sortConfig]);
 
   const handleAddRecord = async (newRecord: Omit<HealthRecord, 'id' | 'timestamp' | 'authorUid'>) => {
-    if (!user) return;
-    
     const recordData = {
       ...newRecord,
       timestamp: new Date().toISOString(),
-      authorUid: user.uid,
+      authorUid: 'anonymous',
     };
 
     try {
@@ -325,25 +289,8 @@ function AppContent() {
     }
   };
 
-  const handleLogin = async () => {
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error("Login failed:", error);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
-
   const handleSyncAlerts = async () => {
-    if (!user || records.length === 0) return;
+    if (records.length === 0) return;
     setLoading(true);
     try {
       const newAlerts = await analyzeOutbreakRisk(records);
@@ -370,18 +317,6 @@ function AppContent() {
       setLoading(false);
     }
   };
-
-  if (!isAuthReady) {
-    return (
-      <div className={`min-h-screen flex items-center justify-center transition-colors ${isDarkMode ? 'bg-zinc-950' : 'bg-zinc-50'}`}>
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Login onLogin={handleLogin} isDarkMode={isDarkMode} />;
-  }
 
   const SortIcon = ({ column }: { column: keyof HealthRecord }) => {
     if (sortConfig?.key !== column) return <ChevronUp className="w-3 h-3 opacity-20" />;
@@ -468,15 +403,6 @@ function AppContent() {
                 {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </button>
               <div className="h-6 w-px bg-zinc-200 dark:bg-zinc-800 mx-2"></div>
-              <div className="flex items-center gap-3 mr-4">
-                <img src={user.photoURL || ''} className="w-8 h-8 rounded-full border border-zinc-200" alt={user.displayName || ''} />
-                <div className="hidden sm:block">
-                  <p className={`text-xs font-medium transition-colors ${isDarkMode ? 'text-white' : 'text-zinc-900'}`}>{user.displayName}</p>
-                  <button onClick={handleLogout} className="text-[10px] text-zinc-500 hover:text-rose-500 flex items-center gap-1">
-                    <LogOut className="w-3 h-3" /> Sign Out
-                  </button>
-                </div>
-              </div>
               <button
                 onClick={() => setActiveTab('dashboard')}
                 className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${

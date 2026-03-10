@@ -77,7 +77,7 @@ service cloud.firestore {
              isValidSeverity(data.severity) &&
              data.location is map && data.location.lat is number && data.location.lng is number &&
              isValidDateString(data.timestamp) &&
-             data.authorUid == request.auth.uid;
+             data.authorUid is string;
     }
 
     function isValidAlert(data) {
@@ -101,15 +101,15 @@ service cloud.firestore {
     }
 
     match /health_records/{recordId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidHealthRecord(request.resource.data);
-      allow update: if isAdmin() || (isAuthenticated() && resource.data.authorUid == request.auth.uid && isValidHealthRecord(request.resource.data));
-      allow delete: if isAdmin() || (isAuthenticated() && resource.data.authorUid == request.auth.uid);
+      allow read: if true;
+      allow create: if isValidHealthRecord(request.resource.data);
+      allow update: if isValidHealthRecord(request.resource.data);
+      allow delete: if true;
     }
 
     match /alerts/{alertId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow read: if true;
+      allow write: if true;
     }
 
     // Default deny
