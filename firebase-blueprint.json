@@ -1,0 +1,49 @@
+{
+  "entities": {
+    "HealthRecord": {
+      "title": "Health Record",
+      "description": "A record of a patient's symptoms and diagnosis at a specific location.",
+      "type": "object",
+      "properties": {
+        "patientName": { "type": "string", "description": "Name of the patient" },
+        "symptoms": { "type": "string", "description": "Comma-separated list of symptoms" },
+        "diagnosis": { "type": "string", "description": "Medical diagnosis" },
+        "severity": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH"], "description": "Severity of the condition" },
+        "location": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" }
+          },
+          "required": ["lat", "lng"]
+        },
+        "timestamp": { "type": "string", "format": "date-time", "description": "When the record was created" },
+        "authorUid": { "type": "string", "description": "UID of the user who added the record" }
+      },
+      "required": ["patientName", "symptoms", "diagnosis", "severity", "location", "timestamp", "authorUid"]
+    },
+    "OutbreakAlert": {
+      "title": "Outbreak Alert",
+      "description": "An alert about a potential disease outbreak in a specific area.",
+      "type": "object",
+      "properties": {
+        "disease": { "type": "string" },
+        "location": { "type": "string" },
+        "riskLevel": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH"] },
+        "description": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["disease", "location", "riskLevel", "description", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/health_records/{recordId}": {
+      "schema": "HealthRecord",
+      "description": "Collection of health records"
+    },
+    "/alerts/{alertId}": {
+      "schema": "OutbreakAlert",
+      "description": "Collection of outbreak alerts"
+    }
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "name": "Sentinel",
+  "description": "A comprehensive health record management system that predicts and visualizes potential disease outbreaks using geographic heatmaps and alerts healthcare facilities and government bodies.",
+  "requestFramePermissions": ["geolocation"]
+}
